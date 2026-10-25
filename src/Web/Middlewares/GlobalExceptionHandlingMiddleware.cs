@@ -59,6 +59,26 @@ namespace Web.Middlewares
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                // Si las credenciales sin invalidas o el usuario no esta autorizado devuelve un error 401
+                _logger.LogError(ex, ex.Message);
+
+                int statusCode = (int)HttpStatusCode.Unauthorized;
+                context.Response.StatusCode = statusCode;
+
+                ProblemDetails problem = new()
+                {
+                    Status = statusCode,
+                    Type = "Unauthorized",
+                    Title = "No autorizado",
+                    Detail = ex.Message
+                };
+            
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+            }
+
             catch (Exception ex)
             {
                 // Para cualquier otro error inesperado en el servidor, devuelve un error 500
