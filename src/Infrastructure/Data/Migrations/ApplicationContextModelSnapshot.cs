@@ -121,6 +121,11 @@ namespace Infrastructure.Data.Migrations
                     b.Property<bool>("Active")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -132,6 +137,31 @@ namespace Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("User");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Domain.Entities.Admin", b =>
+                {
+                    b.HasBaseType("Domain.Entities.User");
+
+                    b.HasDiscriminator().HasValue("Admin");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Client", b =>
+                {
+                    b.HasBaseType("Domain.Entities.User");
+
+                    b.HasDiscriminator().HasValue("Client");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Superadmin", b =>
+                {
+                    b.HasBaseType("Domain.Entities.User");
+
+                    b.HasDiscriminator().HasValue("Superadmin");
                 });
 
             modelBuilder.Entity("Domain.Entities.OrderDetail", b =>

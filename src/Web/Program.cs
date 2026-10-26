@@ -1,4 +1,9 @@
+using System.Text;
+using Application.Security;
 using Application.Services;
+using Infrastructure.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Domain.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Repositories;
@@ -24,6 +29,7 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Repositorio genérico 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -34,6 +40,36 @@ builder.Services.AddScoped<ProductService>();
 
 // Registro del middleware para el manejo de excepciones
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
+
+// Configuracion JWT
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// Servicios de autenticacion 
+builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<AuthService>();
+
+// Configuracion de autenticacion con JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+            ClockSkew = TimeSpan.Zero
+        };
+
+    });
+
+ builder.Services.AddAuthorization();
+
+
 
 var app = builder.Build();
 
@@ -50,8 +86,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
 
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
