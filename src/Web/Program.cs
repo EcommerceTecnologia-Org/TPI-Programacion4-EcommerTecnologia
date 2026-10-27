@@ -1,3 +1,4 @@
+using Microsoft.OpenApi.Models;
 using System.Text;
 using Application.Security;
 using Application.Services;
@@ -15,7 +16,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+
 
 // Cadena de conexion a SQLite
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -67,6 +68,43 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
     });
 
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "TPI Programación 4 - E-commerce API",
+        Version = "v1",
+        Description = "API para el TP de Programación 4"
+    });
+
+    // Configuración para JWT en Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingresá el token JWT con el prefijo Bearer. Ejemplo: Bearer {token}"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+
  builder.Services.AddAuthorization();
 
 
@@ -79,10 +117,11 @@ app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwaggerUI(options =>
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "My API V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "TPI Programación 4 - E-commerce API V1");
+        c.RoutePrefix = "swagger";
     });
 }
 
