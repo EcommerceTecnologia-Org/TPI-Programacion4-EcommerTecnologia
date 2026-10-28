@@ -33,6 +33,14 @@ public class AuthService
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
+        // Validación de formato de email usando Regex
+        // Rechaza strings vacíos, textos sin arroba, cadenas con espacios, o correos a los que les falte el dominio o la extensión final
+        var emailRegex = @"^[^@\s]+@[^@\s]+\.[^@\s]+$"; 
+        if (!Regex.IsMatch(email, emailRegex))
+        {
+            throw new ArgumentException("El formato del correo electrónico no es válido.");
+        }
+
         var existingUser = await _userRepository.GetByEmailAsync(email);
         if (existingUser != null)
         {
