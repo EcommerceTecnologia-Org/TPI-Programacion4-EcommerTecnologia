@@ -111,6 +111,14 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Ejecutar seeder cuando inicia la aplicación(Cambiar antes del deploy)
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    DbSeeder.Seed(dbContext, configuration);
+}
+
 // Intercepta cualquier error globalmente antes de procesar las peticiones
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 
