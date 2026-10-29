@@ -1,4 +1,4 @@
-using Application.Models;
+﻿using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,5 +23,12 @@ public class AuthController : ControllerBase
         var result = await _authService.Login(request);
         return Ok(result);
     }
-}
 
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    {
+        var result = await _authService.Register(request);
+        return Ok(result);
+    }
+}

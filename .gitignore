@@ -274,6 +274,11 @@ ServiceFabricBackup/
 *.ldf
 *.ndf
 
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
 # Business Intelligence projects
 *.rdl.data
 *.bim.layout
@@ -483,3 +488,4 @@ $RECYCLE.BIN/
 
 # Configuración de desarrollo (credenciales locales)
 src/Web/appsettings.Development.json
+*.swp
