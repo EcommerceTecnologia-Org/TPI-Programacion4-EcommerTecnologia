@@ -2,9 +2,11 @@ using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Web.Controllers;
 
+[Authorize] // Protege todos los endpoints de este controlador
 [ApiController]
 [Route("[controller]")]
 public class CategoriesController : ControllerBase

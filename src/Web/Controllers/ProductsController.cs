@@ -2,6 +2,7 @@ using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Web.Controllers;
 
@@ -17,6 +18,7 @@ public class ProductsController : ControllerBase
         _productService = productService;
     }
 
+    // GET es público (cualquiera puede ver los productos sin token)
     // Obtiene todos los productos (HTTP 200)
     [HttpGet]
     [AllowAnonymous]
@@ -26,6 +28,7 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    // Este GET por ID también es público
     // Busca un producto por su id. Si no existe, el middleware responde 404
     [HttpGet("{id}")]
     [AllowAnonymous]
