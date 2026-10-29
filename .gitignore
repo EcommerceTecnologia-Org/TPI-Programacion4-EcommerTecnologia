@@ -488,4 +488,4 @@ $RECYCLE.BIN/
 
 # Configuración de desarrollo (credenciales locales)
 src/Web/appsettings.Development.json
-*.swp
+

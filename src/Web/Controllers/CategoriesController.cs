@@ -2,7 +2,7 @@ using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+
 
 namespace Web.Controllers;
 
@@ -38,7 +38,7 @@ public class CategoriesController : ControllerBase
 
     // Crea una nueva categoría. Si los datos fallan la validación, el middleware captura ArgumentException y devuelve 400
     [HttpPost]
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Superadmin")]
     public IActionResult Create([FromBody] PostCategoryRequest request)
     {
         var newCategory = _categoryService.Create(request);
@@ -47,7 +47,7 @@ public class CategoriesController : ControllerBase
 
     // Elimina una categoría por su ID. Si no existe, el middleware la ataja y responde 404
     [HttpDelete("{id}")]
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin,Superadmin")]
     public IActionResult Delete(int id)
     {
         _categoryService.Delete(id);
