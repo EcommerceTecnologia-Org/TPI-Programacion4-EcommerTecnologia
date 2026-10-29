@@ -1,5 +1,6 @@
 using Application.Models;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -20,6 +21,7 @@ public class ProductsController : ControllerBase
     // GET es público (cualquiera puede ver los productos sin token)
     // Obtiene todos los productos (HTTP 200)
     [HttpGet]
+    [AllowAnonymous]
     public ActionResult<List<ProductDto>> Get()
     {
         var result = _productService.GetAll();
@@ -29,23 +31,25 @@ public class ProductsController : ControllerBase
     // Este GET por ID también es público
     // Busca un producto por su id. Si no existe, el middleware responde 404
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public ActionResult<ProductDto> GetById(int id)
     {
         var result = _productService.GetById(id);
         return Ok(result);
     }
 
-    [Authorize] // Este POST requiere que el usuario esté logueado (crear producto)
-    [HttpPost] // Registra un nuevo producto (HTTP 201 Created)
+    // Registra un nuevo producto (HTTP 201 Created)
+    [HttpPost]
+    [Authorize(Roles = "Admin,Superadmin")]
     public ActionResult<ProductDto> Post([FromBody] PostProductRequest request)
     {
         var newProduct = _productService.Create(request);
         return Ok(newProduct);
     }
 
-    
-    [Authorize] // DELETE requiere autenticación
-    [HttpDelete("{id}")] // Elimina un producto según su id (HTTP 204 No Content). Si no existe, el middleware responde 404
+    // Elimina un producto según su id (HTTP 204 No Content). Si no existe, el middleware responde 404
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,Superadmin")]
     public IActionResult Delete(int id)
     {
         _productService.Delete(id);
