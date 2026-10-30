@@ -4,7 +4,7 @@ namespace Application.Models;
 public record PostProductRequest(
     string Name,
     string Description,
-    decimal Price,
+    double Price,
     int Stock,
     int CategoryId,
     string Image
