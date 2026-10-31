@@ -19,13 +19,22 @@ public class ApplicationContext : DbContext
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
-        // Seteamos el discriminador en la tabla User para saber que tipo de usuario es
-        modelBuilder.Entity<User>()
-            .HasDiscriminator<string>("Discriminator")
-            .HasValue<Client>("Client")
-            .HasValue<Admin>("Admin")
-            .HasValue<Superadmin>("Superadmin");
-    }
+        {
+            // Llama al método base para asegurar la configuración predeterminada de Entity Framework
+            base.OnModelCreating(modelBuilder);
+            
+            // Seteamos el discriminador en la tabla User para saber que tipo de usuario es
+            modelBuilder.Entity<User>()
+                .HasDiscriminator<string>("Discriminator")
+                .HasValue<Client>("Client")
+                .HasValue<Admin>("Admin")
+                .HasValue<Superadmin>("Superadmin");
+
+            // Configuración de la relación Order y OrderDetail con borrado en cascada
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.OrderDetails)
+                .WithOne(od => od.Order)
+                .HasForeignKey(od => od.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
 }
