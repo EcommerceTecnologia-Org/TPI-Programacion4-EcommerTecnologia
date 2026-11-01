@@ -53,4 +53,14 @@ public class CategoriesController : ControllerBase
         _categoryService.Delete(id);
         return NoContent();
     }
+
+    // Actualiza una categoría existente por su ID
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Superadmin")]
+    public IActionResult Update(int id, [FromBody] PostCategoryRequest request)
+    {
+        var updatedCategory = _categoryService.Update(id, request);
+        return Ok(updatedCategory);
+    }
 }
+

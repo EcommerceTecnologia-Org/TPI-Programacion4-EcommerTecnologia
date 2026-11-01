@@ -24,7 +24,7 @@ public class CategoryService
     public CategoryDto GetById(int id)
     {
         var category = _categoryRepository.GetById(id);
-        
+
         // Si no existe, lanzamos KeyNotFoundException
         if (category == null)
         {
@@ -65,5 +65,27 @@ public class CategoryService
         }
 
         _categoryRepository.Delete(category);
+    }
+
+    // Modificar una categoría
+    public CategoryDto Update(int id, PostCategoryRequest request)
+    {
+        var category = _categoryRepository.GetById(id);
+        // si no existe Id
+        if (category == null)
+        {
+            throw new KeyNotFoundException("La categoría no fue encontrada.");
+        }
+        // si el nombre que se quiere poner esta vacio
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ArgumentException("El nombre de la categoría no puede estar vacío.");
+        }
+
+        category.Name = request.Name;
+        
+        _categoryRepository.Update(category);
+
+        return CategoryDto.Create(category);
     }
 }
