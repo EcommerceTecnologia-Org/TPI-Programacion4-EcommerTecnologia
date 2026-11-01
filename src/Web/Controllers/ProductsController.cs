@@ -8,6 +8,7 @@ namespace Web.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Tags("3. Products")] // forzar un orden específico en la interfaz de usuario de Swagger
 public class ProductsController : ControllerBase
 {
     private readonly ProductService _productService;
