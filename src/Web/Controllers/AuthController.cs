@@ -7,6 +7,7 @@ namespace Web.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Tags("1. Auth")] // forzar un orden específico en la interfaz de usuario de Swagger
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;

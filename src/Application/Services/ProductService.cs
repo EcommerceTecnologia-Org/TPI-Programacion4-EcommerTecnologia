@@ -20,6 +20,13 @@ public class ProductService
     public List<ProductDto> GetAll()
     {
         var products = _productRepository.List();
+
+        // Validamos si la lista está vacía o es nula
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException("No se encontraron productos registrados.");
+        }
+
         return ProductDto.Create(products);
     }
 
