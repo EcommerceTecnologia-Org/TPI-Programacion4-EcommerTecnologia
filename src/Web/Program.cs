@@ -53,6 +53,9 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<AuthService>();
 
+// Servicios de usuarios (Cambio de rol)
+builder.Services.AddScoped<UserService>();
+
 // Configuracion de autenticacion con JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -81,7 +84,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API para el TP de Programación 4"
     });
 
-    // Configuración para JWT en Swagger
+    // Configuración para JWT en Swagger (Revisar prefijo Bearer en Authorize de shagger)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -89,7 +92,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Ingresá el token JWT con el prefijo Bearer. Ejemplo: Bearer {token}"
+        Description = "Ingresá el token JWT."
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
