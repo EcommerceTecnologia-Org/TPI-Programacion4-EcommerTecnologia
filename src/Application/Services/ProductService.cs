@@ -51,6 +51,12 @@ public class ProductService
             throw new ArgumentException("El precio del producto debe ser mayor a cero.");
         }
 
+        // Validación: El stock debe ser un valor positivo o 0
+        if (request.Stock < 0)
+        {
+            throw new ArgumentException("El stock del producto no puede ser negativo.");
+        }
+
         // Validation: Se verifica que la categoría exista en la base de datos antes de guardar
         var category = _categoryRepository.GetById(request.CategoryId);
         if (category == null)
@@ -108,6 +114,12 @@ public class ProductService
         if (request.Price <= 0)
         {
             throw new ArgumentException("El precio del producto debe ser mayor a cero.");
+        }
+
+        // Validación: El stock debe ser un valor positivo o 0
+        if (request.Stock < 0)
+        {
+            throw new ArgumentException("El stock del producto no puede ser negativo.");
         }
 
         // Validación: Se verifica que la categoría exista en la base de datos antes de guardar
