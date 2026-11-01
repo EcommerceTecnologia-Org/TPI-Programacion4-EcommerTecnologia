@@ -56,4 +56,13 @@ public class ProductsController : ControllerBase
         _productService.Delete(id);
         return NoContent();
     }
+
+    // Actualiza un producto existente por su ID
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Superadmin")]
+    public IActionResult Update(int id, [FromBody] PostProductRequest request)
+    {
+        var updatedProduct = _productService.Update(id, request);
+        return Ok(updatedProduct);
+    }
 }
