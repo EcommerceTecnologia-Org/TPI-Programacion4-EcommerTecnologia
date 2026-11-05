@@ -118,13 +118,17 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Ejecutar seeder cuando inicia la aplicación(Cambiar antes del deploy)
+// Aplica las migraciones pendientes al arrancar (necesario en Azure, donde no hay CLI de EF)
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+    dbContext.Database.Migrate();   // crea products.db con el schema completo si no existe
+
     var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     DbSeeder.Seed(dbContext, configuration);
 }
+
+
 
 // Intercepta cualquier error globalmente antes de procesar las peticiones
 app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
