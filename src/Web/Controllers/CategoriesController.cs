@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Web.Controllers;
 
+
 [Authorize] // Protege todos los endpoints de este controlador
 [ApiController]
 [Route("[controller]")]
+[Tags("2. Categories")] // forzar un orden específico en la interfaz de usuario de Swagger
 public class CategoriesController : ControllerBase
 {
     private readonly CategoryService _categoryService;
@@ -53,4 +55,14 @@ public class CategoriesController : ControllerBase
         _categoryService.Delete(id);
         return NoContent();
     }
+
+    // Actualiza una categoría existente por su ID
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Superadmin")]
+    public IActionResult Update(int id, [FromBody] PostCategoryRequest request)
+    {
+        var updatedCategory = _categoryService.Update(id, request);
+        return Ok(updatedCategory);
+    }
 }
+

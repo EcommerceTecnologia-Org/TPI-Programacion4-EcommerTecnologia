@@ -2,12 +2,13 @@ using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+
 
 namespace Web.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Tags("3. Products")] // forzar un orden específico en la interfaz de usuario de Swagger
 public class ProductsController : ControllerBase
 {
     private readonly ProductService _productService;
@@ -54,5 +55,14 @@ public class ProductsController : ControllerBase
     {
         _productService.Delete(id);
         return NoContent();
+    }
+
+    // Actualiza un producto existente por su ID
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Superadmin")]
+    public IActionResult Update(int id, [FromBody] PostProductRequest request)
+    {
+        var updatedProduct = _productService.Update(id, request);
+        return Ok(updatedProduct);
     }
 }

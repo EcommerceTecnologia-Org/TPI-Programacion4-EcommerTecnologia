@@ -31,6 +31,8 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderDetailRepository, OrderDetailRepository>();
 
 // Repositorio genérico 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -38,6 +40,8 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 // Registro de Servicios (Application)
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<OrderDetailService>();
 
 // Registro del middleware para el manejo de excepciones
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
@@ -48,6 +52,9 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 // Servicios de autenticacion 
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<AuthService>();
+
+// Servicios de usuarios (Cambio de rol)
+builder.Services.AddScoped<UserService>();
 
 // Configuracion de autenticacion con JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -77,7 +84,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API para el TP de Programación 4"
     });
 
-    // Configuración para JWT en Swagger
+    // Configuración para JWT en Swagger (Revisar prefijo Bearer en Authorize de shagger)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -85,7 +92,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Ingresá el token JWT con el prefijo Bearer. Ejemplo: Bearer {token}"
+        Description = "Ingresá el token JWT."
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement

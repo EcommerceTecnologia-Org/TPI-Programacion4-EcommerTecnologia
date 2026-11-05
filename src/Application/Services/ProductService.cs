@@ -20,6 +20,13 @@ public class ProductService
     public List<ProductDto> GetAll()
     {
         var products = _productRepository.List();
+
+        // Validamos si la lista está vacía o es nula
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException("No se encontraron productos registrados.");
+        }
+
         return ProductDto.Create(products);
     }
 
@@ -49,6 +56,12 @@ public class ProductService
         if (request.Price <= 0)
         {
             throw new ArgumentException("El precio del producto debe ser mayor a cero.");
+        }
+
+        // Validación: El stock debe ser un valor positivo o 0
+        if (request.Stock < 0)
+        {
+            throw new ArgumentException("El stock del producto no puede ser negativo.");
         }
 
         // Validation: Se verifica que la categoría exista en la base de datos antes de guardar
@@ -86,5 +99,53 @@ public class ProductService
         }
 
         _productRepository.Delete(product);
+    }
+
+    // Modifica un producto por ID
+    public ProductDto Update(int id, PostProductRequest request)
+    {
+        // Validar que el producto exista en la base de datos
+        var product = _productRepository.GetById(id);
+        if (product == null)
+        {
+            throw new KeyNotFoundException("El producto no fue encontrado.");
+        }
+
+        // Validación: El nombre no puede estar vacío
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ArgumentException("El nombre del producto no puede estar vacio.");
+        }
+
+        // Validación: El precio debe ser un valor positivo
+        if (request.Price <= 0)
+        {
+            throw new ArgumentException("El precio del producto debe ser mayor a cero.");
+        }
+
+        // Validación: El stock debe ser un valor positivo o 0
+        if (request.Stock < 0)
+        {
+            throw new ArgumentException("El stock del producto no puede ser negativo.");
+        }
+
+        // Validación: Se verifica que la categoría exista en la base de datos antes de guardar
+        var category = _categoryRepository.GetById(request.CategoryId);
+        if (category == null)
+        {
+            throw new ArgumentException($"La categoria con ID {request.CategoryId} no existe.");
+        }
+
+        // Actualizamos las propiedades con los datos nuevos del request
+        product.Name = request.Name;
+        product.Description = request.Description;
+        product.Price = request.Price;
+        product.Stock = request.Stock;
+        product.CategoryId = request.CategoryId;
+        product.Image = request.Image;
+
+        _productRepository.Update(product);
+
+        return ProductDto.Create(product);
     }
 }
