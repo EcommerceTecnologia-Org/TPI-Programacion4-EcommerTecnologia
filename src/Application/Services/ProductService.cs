@@ -41,6 +41,25 @@ public class ProductService
         return ProductDto.Create(product);
     }
 
+    public List<ProductDto> GetByCategoryId(int categoryId)
+    {
+        // Validamos que la categoría exista para no retornar una lista vacía confusa
+        var category = _categoryRepository.GetById(categoryId);
+        if (category == null)
+        {
+            throw new KeyNotFoundException($"No se encontró la categoría con ID {categoryId}.");
+        }
+
+        var products = _productRepository.GetByCategoryId(categoryId);
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException($"No se encontraron productos registrados para la categoría con ID {categoryId}.");
+        }
+
+        return ProductDto.Create(products);
+    }
+
     // Crea un producto utilizando el constructor de dominio
     public ProductDto Create(PostProductRequest request)
     {

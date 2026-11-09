@@ -39,6 +39,16 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    // Este GET por ID de categoría también es público
+    // Busca productos por su ID de categoría. Si no existe, el middleware responde 404
+    [HttpGet("category/{categoryId}")]
+    [AllowAnonymous]
+    public ActionResult<List<ProductDto>> GetByCategoryId(int categoryId)
+    {
+        var products = _productService.GetByCategoryId(categoryId);
+        return Ok(products);
+    }
+
     // Registra un nuevo producto (HTTP 201 Created)
     [HttpPost]
     [Authorize(Roles = "Admin,Superadmin")]
