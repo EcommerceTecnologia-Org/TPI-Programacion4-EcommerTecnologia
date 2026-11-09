@@ -2,16 +2,34 @@ namespace Domain.Entities;
 
 public class OrderDetail
 {
-    public int Id { get; set; }
-    public int OrderId { get; set; } // guarda el número ID de la orden en la base de datos (FK)
-    public Order? Order { get; set; } // permite acceder a la información completa de la orden
+    public int Id { get; private set; }
+    public int OrderId { get; private set; }
+    public Order? Order { get; private set; }
+    public int ProductId { get; private set; }
+    public Product? Product { get; private set; }
+    public int Quantity { get; private set; }
+    public double UnitPrice { get; private set; }
 
-    public int ProductId { get; set; } // guarda el ID del producto comprado (FK)
-    public Product? Product { get; set; } // permite acceder a la información completa del producto
-
-    public int Quantity { get; set; }
-    public double UnitPrice { get; set; }
-
-    // Constructor sin parametros requerido por Entity Framework Core
+    // Constructor sin parámetros requerido por Entity Framework Core
     public OrderDetail() { }
+
+    // Constructor de dominio con validaciones estrictas
+    public OrderDetail(int productId, int quantity, double unitPrice)
+    {
+        ValidateData(quantity, unitPrice);
+
+        ProductId = productId;
+        Quantity = quantity;
+        UnitPrice = unitPrice;
+    }
+
+    // Método auxiliar privado para centralizar las reglas de validación
+    private static void ValidateData(int quantity, double unitPrice)
+    {
+        if (quantity <= 0)
+            throw new ArgumentException("La cantidad debe ser mayor a cero.");
+
+        if (unitPrice < 0)
+            throw new ArgumentException("El precio unitario no puede ser negativo.");
+    }
 }

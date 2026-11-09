@@ -16,6 +16,7 @@ public class AuthService
         _userRepository = userRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
     }
+
     public async Task<AuthResponseDto> Login(LoginRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
@@ -23,7 +24,8 @@ public class AuthService
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null || !user.Active || user.Password != request.Password)
         {
-            throw new UnauthorizedAccessException("Credenciales invalidas.");
+            // Capturado por el Global Exception Handling
+            throw new UnauthorizedAccessException("Credenciales inválidas.");
         }
 
         return _jwtTokenGenerator.GenerateToken(user);
@@ -33,42 +35,28 @@ public class AuthService
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
-        // Validación de formato de email usando Regex
-        // Rechaza strings vacíos, textos sin arroba, cadenas con espacios, o correos a los que les falte el dominio o la extensión final
+        // Validación de formato de email
         var emailRegex = @"^[^@\s]+@[^@\s]+\.[^@\s]+$"; 
         if (!Regex.IsMatch(email, emailRegex))
         {
             throw new ArgumentException("El formato del correo electrónico no es válido.");
         }
 
+        // Validación de existencia en BD 
         var existingUser = await _userRepository.GetByEmailAsync(email);
         if (existingUser != null)
         {
             throw new ArgumentException("El email ya se encuentra registrado.");
         }
-
+        // Validaciones de contraseña
         var password = request.Password ?? string.Empty;
-        if (password.Length <= 8)
+        if (password.Length <= 8 || !Regex.IsMatch(password, "[A-Z]") || !Regex.IsMatch(password, "[0-9]"))
         {
             throw new ArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.");
         }
 
-        if (!Regex.IsMatch(password, "[A-Z]"))
-        {
-            throw new ArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.");
-        }
-
-        if (!Regex.IsMatch(password, "[0-9]"))
-        {
-            throw new ArgumentException("La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.");
-        }
-
-        var client = new Client
-        {
-            Email = email,
-            Password = password,
-            Active = true
-        };
+        // Creamos la entidad utilizando su constructor seguro
+        var client = new Client(email, password);
 
         _userRepository.Add(client);
 

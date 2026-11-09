@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Application.Models;
 using Domain.Entities;
 using Domain.Interfaces;
-
 
 namespace Application.Services
 {
@@ -31,18 +31,16 @@ namespace Application.Services
                 orders = _orderRepository.GetAllWithDetails().Where(o => o.ClientId == userId).ToList();
             }
 
-             if (orders == null || !orders.Any()) // orders == null verifica si la lista nunca fue creada en memoria, mientras que !orders.Any() verifica si fue creada pero está vacía
+            if (orders == null || !orders.Any())
             {
                 throw new KeyNotFoundException("No se encontraron órdenes registradas.");
             }
-
 
             return OrderDto.Create(orders);
         }
 
         public OrderDto GetById(int id)
         {
-            // Usamos el nuevo método del repositorio que trae los detalles
             var order = _orderRepository.GetByIdWithDetails(id);
 
             if (order == null)
@@ -55,16 +53,8 @@ namespace Application.Services
 
         public OrderDto Create(int clientId, PostOrderRequest request)
         {
-            if (request.Total < 0)
-            {
-                throw new ArgumentException("El total de la orden no puede ser negativo.");
-            }
-
-            var order = new Order
-            {
-                ClientId = clientId, // Asignamos el ID real obtenido del token
-                Total = request.Total
-            };
+            // Instanciamos la orden usando el constructor de dominio (las validaciones de total corren ahí dentro)
+            var order = new Order(clientId, request.Total);
 
             _orderRepository.Add(order);
 

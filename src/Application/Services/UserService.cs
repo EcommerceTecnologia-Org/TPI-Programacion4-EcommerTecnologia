@@ -36,8 +36,8 @@ public class UserService
 
         User newUser = newRole switch
         {
-            "Admin" => new Admin { Id = user.Id, Email = user.Email, Password = user.Password, Active = user.Active },
-            "Superadmin" => new Superadmin { Id = user.Id, Email = user.Email, Password = user.Password, Active = user.Active },
+            "Admin" => new Admin(user.Id, user.Email, user.Password, user.Active),
+            "Superadmin" => new Superadmin(user.Id, user.Email, user.Password, user.Active),
             _ => throw new ArgumentException("Rol invalido.")
         };
 

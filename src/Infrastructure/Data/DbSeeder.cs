@@ -19,12 +19,8 @@ public static class DbSeeder
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             return;
 
-        var superadmin = new Superadmin
-        {
-            Email = email.Trim().ToLowerInvariant(),
-            Password = password, 
-            Active = true
-        };
+        // Usamos el constructor seguro de la entidad (Encapsulamiento POO)
+        var superadmin = new Superadmin(email.Trim().ToLowerInvariant(), password);
 
         context.Superadmins.Add(superadmin);
         context.SaveChanges();
