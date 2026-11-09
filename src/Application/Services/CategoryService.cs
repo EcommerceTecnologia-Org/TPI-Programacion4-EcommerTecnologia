@@ -42,8 +42,17 @@ public class CategoryService
     // Crear una nueva categoría usando el constructor de la entidad
     public CategoryDto Create(PostCategoryRequest request)
     {
+        var normalizedName = request.Name?.Trim() ?? string.Empty;
+
+        // Validamos si ya existe otra categoría con el mismo nombre en la BD
+        var existingCategory = _categoryRepository.GetByName(normalizedName);
+        if (existingCategory != null)
+        {
+            throw new ArgumentException($"Ya existe una categoría registrada con el nombre '{normalizedName}'.");
+        }
+        
         // La validación ocurre de forma segura dentro del constructor de Category
-        var category = new Category(request.Name);
+        var category = new Category(normalizedName);
 
         _categoryRepository.Add(category);
 
@@ -73,8 +82,17 @@ public class CategoryService
             throw new KeyNotFoundException("La categoría no fue encontrada.");
         }
 
+        var normalizedName = request.Name?.Trim() ?? string.Empty;
+
+        // Validamos si el nuevo nombre ya pertenece a otra categoría distinta en la BD
+        var existingCategory = _categoryRepository.GetByName(normalizedName);
+        if (existingCategory != null && existingCategory.Id != id)
+        {
+            throw new ArgumentException($"Ya existe otra categoría registrada con el nombre '{normalizedName}'.");
+        }
+
         // Delegamos la actualización y validación al dominio
-        category.UpdateName(request.Name);
+        category.UpdateName(normalizedName);
         
         _categoryRepository.Update(category);
 
