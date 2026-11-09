@@ -4,13 +4,23 @@ namespace Domain.Entities;
 
 public class Order
 {
-    public int Id { get; set; }
-    public int ClientId { get; set; }
-    public double Total { get; set; }
+    public int Id { get; private set; }
+    public int ClientId { get; private set; }
+    public double Total { get; private set; }
 
     // Propiedad de navegación
-    public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>(); // lista que guarda todos los orderDetail de esa Orden
+    public ICollection<OrderDetail> OrderDetails { get; private set; } = new List<OrderDetail>();
 
-    // Constructor sin parametros requerido por Entity Framework Core
+    // Constructor sin parámetros requerido por Entity Framework Core
     public Order() { }
+
+    // Constructor de dominio con validación estricta
+    public Order(int clientId, double total)
+    {
+        if (total < 0)
+            throw new ArgumentException("El total de la orden no puede ser negativo.");
+
+        ClientId = clientId;
+        Total = total;
+    }
 }

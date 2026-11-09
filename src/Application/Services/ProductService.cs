@@ -7,21 +7,19 @@ namespace Application.Services;
 public class ProductService
 {
     private readonly IProductRepository _productRepository;
-    private readonly ICategoryRepository _categoryRepository; // Repositorio para consultar categorías en la base de datos
+    private readonly ICategoryRepository _categoryRepository;
 
-    // Inyección de dependencias de ambos repositorios
     public ProductService(IProductRepository productRepository, ICategoryRepository categoryRepository)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
     }
 
-    // Obtiene la lista completa de productos traducida a DTOs
+    // Obtiene la lista completa de productos
     public List<ProductDto> GetAll()
     {
         var products = _productRepository.List();
 
-        // Validamos si la lista está vacía o es nula
         if (products == null || !products.Any())
         {
             throw new KeyNotFoundException("No se encontraron productos registrados.");
@@ -30,7 +28,7 @@ public class ProductService
         return ProductDto.Create(products);
     }
 
-    // Busca un producto por ID. Si no existe, lanza KeyNotFoundException (el Middleware lo convierte en HTTP 404)
+    // Busca un producto por ID
     public ProductDto GetById(int id)
     {
         var product = _productRepository.GetById(id);
@@ -43,52 +41,32 @@ public class ProductService
         return ProductDto.Create(product);
     }
 
-    // Crea un producto aplicando las validaciones de negocio necesarias
+    // Crea un producto utilizando el constructor de dominio
     public ProductDto Create(PostProductRequest request)
     {
-        // Validation: El nombre no puede estar vacío
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ArgumentException("El nombre del producto no puede estar vacío.");
-        }
-
-        // Validation: El precio debe ser un valor positivo
-        if (request.Price <= 0)
-        {
-            throw new ArgumentException("El precio del producto debe ser mayor a cero.");
-        }
-
-        // Validación: El stock debe ser un valor positivo o 0
-        if (request.Stock < 0)
-        {
-            throw new ArgumentException("El stock del producto no puede ser negativo.");
-        }
-
-        // Validation: Se verifica que la categoría exista en la base de datos antes de guardar
+        // Validación de existencia de la categoría previa
         var category = _categoryRepository.GetById(request.CategoryId);
         if (category == null)
         {
             throw new ArgumentException($"La categoria con ID {request.CategoryId} no existe.");
         }
 
-        // Mapeo del objeto DTO/Request a la entidad de dominio
-        var newProduct = new Product
-        {
-            Name = request.Name,
-            Description = request.Description,
-            Price = (double)request.Price,
-            Stock = request.Stock,
-            CategoryId = request.CategoryId,
-            Image = request.Image,
-            Active = true
-        };
+        // Instanciamos el producto usando el constructor seguro (las validaciones de nombre, precio y stock se ejecutan ahí dentro)
+        var newProduct = new Product(
+            request.Name,
+            request.Description,
+            (double)request.Price,
+            request.Stock,
+            request.Image,
+            request.CategoryId
+        );
 
         _productRepository.Add(newProduct);
 
         return ProductDto.Create(newProduct);
     }
 
-    // Elimina un producto por ID. Si no existe, lanza KeyNotFoundException (el Middleware responde HTTP 404)
+    // Elimina un producto por ID
     public void Delete(int id)
     {
         var product = _productRepository.GetById(id);
@@ -101,48 +79,31 @@ public class ProductService
         _productRepository.Delete(product);
     }
 
-    // Modifica un producto por ID
+    // Modifica un producto utilizando el método de negocio de la entidad
     public ProductDto Update(int id, PostProductRequest request)
     {
-        // Validar que el producto exista en la base de datos
         var product = _productRepository.GetById(id);
         if (product == null)
         {
             throw new KeyNotFoundException("El producto no fue encontrado.");
         }
 
-        // Validación: El nombre no puede estar vacío
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ArgumentException("El nombre del producto no puede estar vacio.");
-        }
-
-        // Validación: El precio debe ser un valor positivo
-        if (request.Price <= 0)
-        {
-            throw new ArgumentException("El precio del producto debe ser mayor a cero.");
-        }
-
-        // Validación: El stock debe ser un valor positivo o 0
-        if (request.Stock < 0)
-        {
-            throw new ArgumentException("El stock del producto no puede ser negativo.");
-        }
-
-        // Validación: Se verifica que la categoría exista en la base de datos antes de guardar
+        // Validación de existencia de la categoría
         var category = _categoryRepository.GetById(request.CategoryId);
         if (category == null)
         {
             throw new ArgumentException($"La categoria con ID {request.CategoryId} no existe.");
         }
 
-        // Actualizamos las propiedades con los datos nuevos del request
-        product.Name = request.Name;
-        product.Description = request.Description;
-        product.Price = request.Price;
-        product.Stock = request.Stock;
-        product.CategoryId = request.CategoryId;
-        product.Image = request.Image;
+        // Delegamos la actualización y validación al dominio
+        product.Update(
+            request.Name,
+            request.Description,
+            (double)request.Price,
+            request.Stock,
+            request.Image,
+            request.CategoryId
+        );
 
         _productRepository.Update(product);
 

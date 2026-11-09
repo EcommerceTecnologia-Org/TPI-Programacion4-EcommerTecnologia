@@ -18,7 +18,6 @@ public class CategoryService
     {
         var categories = _categoryRepository.List();
 
-        // Validamos si la lista está vacía o es nula para evitar retornar vacío sin avisar
         if (categories == null || !categories.Any())
         {
             throw new KeyNotFoundException("No se encontraron categorias registradas");
@@ -32,7 +31,6 @@ public class CategoryService
     {
         var category = _categoryRepository.GetById(id);
 
-        // Si no existe, lanzamos KeyNotFoundException
         if (category == null)
         {
             throw new KeyNotFoundException($"No se encontro la categoria con ID {id}.");
@@ -41,19 +39,11 @@ public class CategoryService
         return CategoryDto.Create(category);
     }
 
-    // Crear una nueva categoría con validaciones
+    // Crear una nueva categoría usando el constructor de la entidad
     public CategoryDto Create(PostCategoryRequest request)
     {
-        // Validación de regla de negocio
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ArgumentException("El nombre de la categoria no puede estar vacio.");
-        }
-
-        var category = new Category
-        {
-            Name = request.Name
-        };
+        // La validación ocurre de forma segura dentro del constructor de Category
+        var category = new Category(request.Name);
 
         _categoryRepository.Add(category);
 
@@ -65,7 +55,6 @@ public class CategoryService
     {
         var category = _categoryRepository.GetById(id);
 
-        // si no existe Id
         if (category == null)
         {
             throw new KeyNotFoundException($"No se puede eliminar. No existe la categoria con ID {id}.");
@@ -74,22 +63,18 @@ public class CategoryService
         _categoryRepository.Delete(category);
     }
 
-    // Modificar una categoría
+    // Modificar una categoría usando el método de negocio de la entidad
     public CategoryDto Update(int id, PostCategoryRequest request)
     {
         var category = _categoryRepository.GetById(id);
-        // si no existe Id
+        
         if (category == null)
         {
             throw new KeyNotFoundException("La categoría no fue encontrada.");
         }
-        // si el nombre que se quiere poner esta vacio
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ArgumentException("El nombre de la categoría no puede estar vacío.");
-        }
 
-        category.Name = request.Name;
+        // Delegamos la actualización y validación al dominio
+        category.UpdateName(request.Name);
         
         _categoryRepository.Update(category);
 

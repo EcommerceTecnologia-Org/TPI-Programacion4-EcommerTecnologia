@@ -9,7 +9,7 @@ namespace Application.Services
     public class OrderDetailService
     {
         private readonly IOrderDetailRepository _orderDetailRepository;
-        private readonly IProductRepository _productRepository; // Útil para validar que el producto exista
+        private readonly IProductRepository _productRepository;
 
         public OrderDetailService(IOrderDetailRepository orderDetailRepository, IProductRepository productRepository)
         {
@@ -48,22 +48,12 @@ namespace Application.Services
                 throw new KeyNotFoundException("El producto indicado en el detalle no existe");
             }
 
-            if (request.Quantity <= 0)
-            {
-                throw new ArgumentException("La cantidad debe ser mayor a cero");
-            }
-
-            if (request.UnitPrice < 0)
-            {
-                throw new ArgumentException("El precio unitario no puede ser negativo");
-            }
-
-            var orderDetail = new OrderDetail
-            {
-                ProductId = request.ProductId,
-                Quantity = request.Quantity,
-                UnitPrice = request.UnitPrice
-            };
+            // Instanciamos el detalle usando el constructor de dominio (las validaciones de quantity y unitPrice corren ahí)
+            var orderDetail = new OrderDetail(
+                request.ProductId,
+                request.Quantity,
+                request.UnitPrice
+            );
 
             _orderDetailRepository.Add(orderDetail);
 

@@ -1,17 +1,30 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Domain.Entities;
 
-public class User
+public abstract class User
 {
-    public int Id { get; set; }
+    public int Id { get; protected set; }
+    public string Email { get; protected set; } = string.Empty;
+    public string Password { get; protected set; } = string.Empty;
+    public bool Active { get; protected set; } = true;
 
-    public string Email { get; set; } = string.Empty;
+    // Constructor protegido requerido por Entity Framework Core y clases hijas
+    protected User() { }
 
-    public string Password { get; set; } = string.Empty;
+    // Constructor que asegura que no se pueda instanciar un usuario con datos vacíos
+    protected User(string email, string password)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("El email es requerido.");
 
-    public bool Active { get; set; } = true;
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("La contraseña es requerida.");
 
-    // Constructor sin parametros necesario para Entity Framework Core
-    public User() { }
+        Email = email;
+        Password = password;
+        Active = true;
+    }
+
+    // Métodos para modificar estado de forma controlada 
+    public void Deactivate() => Active = false;
+    public void Activate() => Active = true;
 }

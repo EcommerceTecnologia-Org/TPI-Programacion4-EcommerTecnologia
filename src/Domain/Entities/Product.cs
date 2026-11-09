@@ -1,23 +1,59 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Domain.Entities;
 
 public class Product
 {
+    public int Id { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string Image { get; private set; } = string.Empty;
+    public double Price { get; private set; }
+    public string Description { get; private set; } = string.Empty;
+    public bool Active { get; private set; } = true;
+    public int Stock { get; private set; }
 
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Image { get; set; } = string.Empty;
-    public double Price { get; set; }
-    public string Description { get; set; } = string.Empty;
-    public bool Active { get; set; } = true;
-    public int Stock { get; set; }
+    // Clave foránea y navegación
+    public int CategoryId { get; private set; }
+    public Category? Category { get; private set; }
 
-    // Clave foránea según diagrama
-    public int CategoryId { get; set; }
-    public Category? Category { get; set; }
-
-
-    // Constructor sin parametros requerido por Entity Framework Core
+    // Constructor sin parámetros requerido por Entity Framework Core
     public Product() { }
+
+    // Constructor de dominio con validaciones estrictas
+    public Product(string name, string description, double price, int stock, string image, int categoryId)
+    {
+        ValidateData(name, price, stock);
+
+        Name = name.Trim();
+        Description = description?.Trim() ?? string.Empty;
+        Price = price;
+        Stock = stock;
+        Image = image?.Trim() ?? string.Empty;
+        CategoryId = categoryId;
+        Active = true;
+    }
+
+    // Método de negocio para actualizar el producto de forma controlada
+    public void Update(string name, string description, double price, int stock, string image, int categoryId)
+    {
+        ValidateData(name, price, stock);
+
+        Name = name.Trim();
+        Description = description?.Trim() ?? string.Empty;
+        Price = price;
+        Stock = stock;
+        Image = image?.Trim() ?? string.Empty;
+        CategoryId = categoryId;
+    }
+
+    // Método auxiliar privado para centralizar las reglas de validación
+    private static void ValidateData(string name, double price, int stock)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("El nombre del producto no puede estar vacío.");
+
+        if (price <= 0)
+            throw new ArgumentException("El precio del producto debe ser mayor a cero.");
+
+        if (stock < 0)
+            throw new ArgumentException("El stock del producto no puede ser negativo.");
+    }
 }
