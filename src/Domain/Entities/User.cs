@@ -25,6 +25,6 @@ public abstract class User
     }
 
     // Métodos para modificar estado de forma controlada 
-    public void Deactivate() => Active = false;
+    public void Desactivate() => Active = false;
     public void Activate() => Active = true;
 }

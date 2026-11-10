@@ -36,7 +36,11 @@ namespace Web.Controllers
         [Authorize]
         public IActionResult GetById(int id)
         {
-            var order = _orderService.GetById(id);
+            // Extraemos únicamente el ID y el Role de los claims del token
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+            // Si es Admin o Superadmin, puede ver todas las órdenes. Si es cliente, solo las suyas.
+            var order = _orderService.GetById(id, userId, role);
             return Ok(order);
         }
 
