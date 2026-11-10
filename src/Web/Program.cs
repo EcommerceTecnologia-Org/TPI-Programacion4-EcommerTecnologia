@@ -28,7 +28,6 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
 
 // Registro del Repositorio (Inyeccion de dependencias)
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -41,7 +40,7 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<OrderService>();
-builder.Services.AddScoped<OrderDetailService>();
+
 
 // Registro del middleware para el manejo de excepciones
 builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
