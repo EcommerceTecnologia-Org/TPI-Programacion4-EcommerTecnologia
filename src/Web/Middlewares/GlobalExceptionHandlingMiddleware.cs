@@ -78,6 +78,26 @@ namespace Web.Middlewares
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
             }
+            
+            catch (InvalidOperationException ex)
+            {
+                // Si ocurre un error de lógica de negocio (como stock insuficiente), devuelve un 400 Bad Request
+                _logger.LogError(ex, ex.Message);
+
+                int statusCode = (int)HttpStatusCode.BadRequest;
+                context.Response.StatusCode = statusCode;
+
+                ProblemDetails problem = new()
+                {
+                    Status = statusCode,
+                    Type = "Bad Request",
+                    Title = "Operación no válida",
+                    Detail = ex.Message
+                };
+
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(JsonSerializer.Serialize(problem));
+            }
 
             catch (Exception ex)
             {

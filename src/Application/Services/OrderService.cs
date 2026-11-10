@@ -41,13 +41,19 @@ namespace Application.Services
             return OrderDto.Create(orders);
         }
 
-        public OrderDto GetById(int id)
+        public OrderDto GetById(int id, int currentUserId, string role)
         {
             var order = _orderRepository.GetByIdWithDetails(id);
 
             if (order == null)
             {
                 throw new KeyNotFoundException("La orden no fue encontrada.");
+            }
+
+            // Si es un cliente común, validamos que la orden le pertenezca
+            if (role != "Admin" && role != "Superadmin" && order.ClientId != currentUserId)
+            {
+                throw new UnauthorizedAccessException("No tenés permisos para ver esta orden.");
             }
 
             return OrderDto.Create(order);
