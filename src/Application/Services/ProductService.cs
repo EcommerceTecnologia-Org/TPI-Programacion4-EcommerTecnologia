@@ -124,7 +124,8 @@ public class ProductService
             request.CategoryId
         );
 
-        _productRepository.Update(product);
+        _productRepository.Update(product); // Registramos el cambio en el Change Tracker 
+        _productRepository.SaveChanges(); // Guardamos los cambios en la base de datos
 
         return ProductDto.Create(product);
     }

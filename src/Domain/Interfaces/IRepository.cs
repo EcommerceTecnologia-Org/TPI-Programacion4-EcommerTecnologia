@@ -11,4 +11,5 @@ public interface IRepository<T> where T : class
     void Update(T entity);
     // Baja
     void Delete(T entity);
+    int SaveChanges();
 }
