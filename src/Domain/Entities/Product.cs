@@ -56,4 +56,20 @@ public class Product
         if (stock < 0)
             throw new ArgumentException("El stock del producto no puede ser negativo.");
     }
+
+    // Método de negocio para descontar stock de forma segura
+    public void SubtractStock(int quantity)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentException("La cantidad a descontar debe ser mayor a cero.");
+        }
+
+        if (Stock < quantity)
+        {
+            throw new InvalidOperationException($"Stock insuficiente para el producto '{Name}'. Stock actual: {Stock}, solicitado: {quantity}.");
+        }
+
+        Stock -= quantity;
+    }
 }

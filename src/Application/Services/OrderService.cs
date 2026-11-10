@@ -10,10 +10,12 @@ namespace Application.Services
     public class OrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IProductRepository _productRepository;
 
-        public OrderService(IOrderRepository orderRepository)
+        public OrderService(IOrderRepository orderRepository, IProductRepository productRepository)
         {
             _orderRepository = orderRepository;
+            _productRepository = productRepository;
         }
 
         public List<OrderDto> GetOrdersForUser(int userId, string role)
@@ -53,14 +55,42 @@ namespace Application.Services
 
         public OrderDto Create(int clientId, PostOrderRequest request)
         {
-            // Instanciamos la orden usando el constructor de dominio (las validaciones de total corren ahí dentro)
-            var order = new Order(clientId, request.Total);
+            double calculatedTotal = 0;
+            var orderDetails = new List<OrderDetail>();
+
+            foreach (var itemRequest in request.Items)
+            {
+                var product = _productRepository.GetById(itemRequest.ProductId);
+                if (product == null)
+                {
+                    throw new KeyNotFoundException($"El producto con ID {itemRequest.ProductId} no fue encontrado.");
+                }
+
+                // Descontamos stock de forma segura mediante la entidad
+                product.SubtractStock(itemRequest.Quantity);
+                _productRepository.Update(product);
+
+                // Acumulamos el total usando el precio real del producto en la BD
+                calculatedTotal += product.Price * itemRequest.Quantity;
+
+                // Creamos el detalle usando el constructor de dominio de OrderDetail
+                var orderDetail = new OrderDetail(product.Id, itemRequest.Quantity, product.Price);
+                orderDetails.Add(orderDetail);
+            }
+
+            // Creamos la orden con el total calculado de forma segura en el servidor
+            var order = new Order(clientId, calculatedTotal);
+
+            // Asociamos los detalles a la orden
+            foreach (var detail in orderDetails)
+            {
+                order.OrderDetails.Add(detail);
+            }
 
             _orderRepository.Add(order);
 
             return OrderDto.Create(order);
         }
-
         public void Delete(int id)
         {
             var order = _orderRepository.GetById(id);
