@@ -68,7 +68,7 @@ namespace Application.Services
 
                 // Descontamos stock de forma segura mediante la entidad
                 product.SubtractStock(itemRequest.Quantity);
-                _productRepository.Update(product);
+                _productRepository.Update(product); // // Registramos el cambio en el Change Tracker (sin impactar todavía en la BDD)
 
                 // Acumulamos el total usando el precio real del producto en la BD
                 calculatedTotal += product.Price * itemRequest.Quantity;
@@ -86,7 +86,8 @@ namespace Application.Services
             {
                 order.OrderDetails.Add(detail);
             }
-
+            // Al agregar la orden, se ejecuta el SaveChanges() y se persiste todo de forma atómica:
+            // La orden, sus detalles y los stocks descontados de los productos.
             _orderRepository.Add(order);
 
             return OrderDto.Create(order);

@@ -93,9 +93,11 @@ public class CategoryService
 
         // Delegamos la actualización y validación al dominio
         category.UpdateName(normalizedName);
-        
+        // Marcamos como actualizado en el Change Tracker
         _categoryRepository.Update(category);
-
+        // Guardamos los cambios explícitamente en la base de datos
+        _categoryRepository.SaveChanges();
+    
         return CategoryDto.Create(category);
     }
 }
