@@ -23,9 +23,15 @@ namespace Web.Controllers
         [Authorize]
         public IActionResult GetAll()
         {
-            // Extraemos únicamente el ID y el Role de los claims del token
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            // Extraemos y validamos de forma segura el ID del usuario desde el token JWT
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                throw new UnauthorizedAccessException("No se pudo identificar al usuario.");
+            }
+
             var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
             // Si es Admin o Superadmin, puede ver todas las órdenes. Si es cliente, solo las suyas.
             var orders = _orderService.GetOrdersForUser(userId, role);
             return Ok(orders);
@@ -36,10 +42,16 @@ namespace Web.Controllers
         [Authorize]
         public IActionResult GetById(int id)
         {
-            // Extraemos únicamente el ID y el Role de los claims del token
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            // Extraemos y validamos de forma segura el ID del usuario desde el token JWT
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                throw new UnauthorizedAccessException("No se pudo identificar al usuario.");
+            }
+
             var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
-            // Si es Admin o Superadmin, puede ver todas las órdenes. Si es cliente, solo las suyas.
+
+            // Si es Admin o Superadmin, puede ver cualquier orden. Si es cliente, solo las suyas.
             var order = _orderService.GetById(id, userId, role);
             return Ok(order);
         }
@@ -49,7 +61,14 @@ namespace Web.Controllers
         [Authorize]
         public IActionResult Create([FromBody] PostOrderRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0"); // Conviene que el ID del cliente no venga desde el JSON que manda el usuario, sino que se extraiga directamente del token JWT
+            // Extraemos y validamos de forma segura el ID del cliente que realiza la orden
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                throw new UnauthorizedAccessException("No se pudo identificar al usuario.");
+            }
+
+            // El ID se extrae directamente del token JWT por seguridad
             var newOrder = _orderService.Create(userId, request);
             return CreatedAtAction(nameof(GetById), new { id = newOrder.Id }, newOrder); // Retorna un código HTTP 201 Created, incluye la URL del recurso recién creado (usando GetById) y devuelve el objeto order en el body
         }
