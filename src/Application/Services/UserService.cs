@@ -15,127 +15,104 @@ public class UserService
         _userRepository = userRepository;
     }
     // Modifica el rol de un usuario existente (ej. de Client a Admin o Superadmin)
-    public async Task ChangeRoleAsync(int userId, ChangeUserRoleRequest request, int currentUserId)
+    public void ChangeRole(int userId, ChangeUserRoleRequest request, int currentUserId)
     {
         var newRole = request.NewRole?.Trim();
-        // Validamos que el rol no esté vacío
+        // Validamos que el rol no esté vacío ni nulo
         if (string.IsNullOrWhiteSpace(newRole))
             throw new ArgumentException("El rol es requerido.");
-        // Validamos que el rol esté dentro de los permitidos
+        // Validamos que el rol destino esté dentro de los permitidos por el negocio
         if (newRole != "Admin" && newRole != "Superadmin")
             throw new ArgumentException("Rol invalido. Solo se permite Admin o Superadmin.");
-        // Evitamos que un administrador se cambie el rol a sí mismo
+        // Evitamos que un administrador se auto-modifique el rol
         if (userId == currentUserId)
             throw new ArgumentException("No puedes cambiarte el rol a ti mismo.");
-        // Buscamos el usuario por su ID de forma asincrónica
-        var user = await _userRepository.GetByIdAsync(userId);
+
+        var user = _userRepository.GetById(userId); // Buscamos al usuario
         if (user == null)
             throw new KeyNotFoundException("Usuario no encontrado.");
-        // Verificamos que el usuario actual sea un cliente para poder ascenderlo
+        // Validamos que el usuario al que se le cambia el rol sea estrictamente un cliente
         if (user is not Client)
             throw new ArgumentException("Solo se puede cambiar el rol de usuarios con rol Client.");
-        // Creamos la nueva instancia del usuario según el rol seleccionado usando polimorfismo
+        // Creamos la nueva instancia del usuario según el rol seleccionado utilizando polimorfismo
         User newUser = newRole switch
         {
             "Admin" => new Admin(user.Id, user.Email, user.Password, user.Active),
             "Superadmin" => new Superadmin(user.Id, user.Email, user.Password, user.Active),
             _ => throw new ArgumentException("Rol invalido.")
         };
-        // Reemplazamos la entidad vieja por la nueva en el repositorio
-        await _userRepository.ReplaceAsync(user, newUser);
-    }
 
+        // Reemplazamos la entidad vieja por la nueva en el repositorio
+        _userRepository.Replace(user, newUser);
+    }
     // Activa un usuario existente que se encontraba inactivo
-    public async Task ActivateAsync(int userId, int currentUserId)
+    public void Activate(int userId, int currentUserId)
     {
-        // Evitamos que un administrador modifique su propio estado 
+        // Evitamos que un administrador modifique su propio estado de activación por accidente
         if (userId == currentUserId)
             throw new ArgumentException("No puedes cambiar tu propio estado de activación.");
 
-        // Buscamos al usuario en la base de datos
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = _userRepository.GetById(userId);
         if (user == null)
             throw new KeyNotFoundException("Usuario no encontrado.");
 
-        // Validamos si el usuario ya está activo, avisamos
+        // Validamos si el usuario ya se encuentra activo para evitar operaciones redundantes
         if (user.Active)
             throw new ArgumentException("El usuario ya se encuentra activo.");
 
-        // Ejecutamos el método de negocio de la entidad para cambiar el estado en memoria
+        // Ejecutamos el método de dominio para cambiar el estado en memoria
         user.Activate();
 
-        // Actualizamos el registro en el repositorio (preparando el cambio)
+        // Actualizamos y persistimos los cambios de forma explícita en la base de datos
         _userRepository.Update(user);
-        // Como el update ya no guarda automáticamente, persistimos los cambios de forma explícita
-        _userRepository.SaveChanges(); // (o _userRepository.SaveChanges() según cómo tengas definido el método)
+        _userRepository.SaveChanges();
     }
 
     // Desactiva un usuario existente bloqueando su acceso
-    public async Task DesactivateAsync(int userId, int currentUserId)
+    public void Desactivate(int userId, int currentUserId)
     {
-        // Evitamos que un administrador se auto-desactive por accidente
+        // Evitamos que un administrador se auto-desactive
         if (userId == currentUserId)
             throw new ArgumentException("No puedes cambiar tu propio estado de activación.");
 
-        // Buscamos al usuario en la base de datos
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = _userRepository.GetById(userId);
         if (user == null)
             throw new KeyNotFoundException("Usuario no encontrado.");
 
-        // Validamos si el usuario ya está inactivo, avisamos
+        // Validamos si el usuario ya está inactivo
         if (!user.Active)
             throw new ArgumentException("El usuario ya se encuentra inactivo.");
 
-        // Ejecutamos el método de negocio de la entidad para desactivarlo en memoria
+        // Ejecutamos el método de dominio para desactivarlo en memoria
         user.Desactivate();
 
-        // Actualizamos el registro en el repositorio
+        // Actualizamos y persistimos los cambios en la base de datos
         _userRepository.Update(user);
-
-        // Guardamos los cambios explícitamente en la base de datos
-        _userRepository.SaveChanges(); // (ajustá el nombre del método de guardado según tu interfaz)
+        _userRepository.SaveChanges();
     }
 
-    // Obtiene una lista de todos los usuarios registrados usando el método síncrono List()
-    public IEnumerable<UserResponseDto> GetAll()
+    // Obtiene una lista completa de todos los usuarios registrados, mapeándolos al DTO de respuesta
+    public List<UserResponseDto> GetAll()
     {
-        var users = _userRepository.List(); 
+        var users = _userRepository.List();
 
-        return users.Select(u => new UserResponseDto
+        if (users == null || !users.Any())
         {
-            Id = u.Id,
-            Email = u.Email,
-            Active = u.Active,
-            // Mapeamos el rol usando pattern matching según el tipo de entidad
-            Role = u switch
-            {
-                Superadmin => "Superadmin",
-                Admin => "Admin",
-                Client => "Client",
-                _ => "Unknown"
-            }
-        });
+            throw new KeyNotFoundException("No se encontraron usuarios registrados.");
+        }
+
+        // Delegamos el mapeo de la colección directamente al DTO
+        return UserResponseDto.Create(users);
     }
 
     // Obtiene un usuario específico por su ID mapeándolo a un UserResponseDto para exponer solo la información necesaria
-    public async Task<UserResponseDto?> GetByIdAsync(int id)
+    public UserResponseDto GetById(int id)
     {
-        var user = await _userRepository.GetByIdAsync(id);
+        var user = _userRepository.GetById(id);
         if (user == null)
             throw new KeyNotFoundException("Usuario no encontrado.");
 
-        return new UserResponseDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            Active = user.Active,
-            Role = user switch
-            {
-                Superadmin => "Superadmin",
-                Admin => "Admin",
-                Client => "Client",
-                _ => "Unknown"
-            }
-        };
+        // Delegamos el mapeo del usuario individual al DTO
+        return UserResponseDto.Create(user);
     }
 }
