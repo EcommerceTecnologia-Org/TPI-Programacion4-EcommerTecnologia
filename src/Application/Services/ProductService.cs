@@ -23,8 +23,8 @@ public class ProductService
         return await _dolarService.GetVentaOficial();
     }
 
-    // Obtiene la lista completa de productos
-    public async Task<List<ProductDto>> GetAll()
+    // Obtiene la lista completa de productos (filtrando si es cliente/anónimo)
+    public async Task<List<ProductDto>> GetAll(string role)
     {
         var products = _productRepository.List();
 
@@ -33,12 +33,23 @@ public class ProductService
             throw new KeyNotFoundException("No se encontraron productos registrados.");
         }
 
+        // Si NO es Admin ni Superadmin, mostramos únicamente los activos
+        if (role != "Admin" && role != "Superadmin")
+        {
+            products = products.Where(p => p.Active).ToList();
+        }
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException("No se encontraron productos activos registrados.");
+        }
+
         var dolarVenta = await ObtenerCotizacion();
         return ProductDto.Create(products, dolarVenta);
     }
 
     // Busca un producto por ID
-    public async Task<ProductDto> GetById(int id)
+    public async Task<ProductDto> GetById(int id, string role)
     {
         var product = _productRepository.GetById(id);
 
@@ -47,11 +58,18 @@ public class ProductService
             throw new KeyNotFoundException($"No se encontró el producto con ID {id}.");
         }
 
+        // Si el producto está inactivo y el usuario no es Admin ni Superadmin, simulamos que no existe (404)
+        if (!product.Active && role != "Admin" && role != "Superadmin")
+        {
+            throw new KeyNotFoundException($"No se encontró el producto con ID {id}.");
+        }
+
         var dolarVenta = await ObtenerCotizacion();
         return ProductDto.Create(product, dolarVenta);
     }
 
-    public async Task<List<ProductDto>> GetByCategoryId(int categoryId)
+    // Busca productos por ID de categoría
+    public async Task<List<ProductDto>> GetByCategoryId(int categoryId, string role)
     {
         var category = _categoryRepository.GetById(categoryId);
         if (category == null)
@@ -66,9 +84,21 @@ public class ProductService
             throw new KeyNotFoundException($"No se encontraron productos registrados para la categoría con ID {categoryId}.");
         }
 
+        // Si no es Admin ni Superadmin, filtramos solo los activos de esa categoría
+        if (role != "Admin" && role != "Superadmin")
+        {
+            products = products.Where(p => p.Active).ToList();
+        }
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException($"No se encontraron productos activos registrados para la categoría con ID {categoryId}.");
+        }
+
         var dolarVenta = await ObtenerCotizacion();
         return ProductDto.Create(products, dolarVenta);
     }
+    
 
     // Crea un producto utilizando el constructor de dominio
     public ProductDto Create(PostProductRequest request)

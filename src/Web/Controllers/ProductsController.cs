@@ -2,7 +2,7 @@ using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using System.Security.Claims;
 
 namespace Web.Controllers;
 
@@ -23,9 +23,11 @@ public class ProductsController : ControllerBase
     // Obtiene todos los productos (HTTP 200)
     [HttpGet]
     [AllowAnonymous]
-     public async Task<ActionResult<List<ProductDto>>> Get()
+    public async Task<ActionResult<List<ProductDto>>> Get()
     {
-        var result = await _productService.GetAll();
+        // Extraemos el rol del token si existe, de lo contrario queda vacío
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        var result = await _productService.GetAll(role);
         return Ok(result);
     }
 
@@ -36,7 +38,9 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<ProductDto>> GetById(int id)
     {
-        var result = await _productService.GetById(id);
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+        var result = await _productService.GetById(id, role);
         return Ok(result);
     }
 
@@ -47,7 +51,9 @@ public class ProductsController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<List<ProductDto>>> GetByCategoryId(int categoryId)
     {
-        var products = await _productService.GetByCategoryId(categoryId);
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+        var products = await _productService.GetByCategoryId(categoryId, role);
         return Ok(products);
     }
 
@@ -71,7 +77,7 @@ public class ProductsController : ControllerBase
 
     // Endpoint PUT para activar un producto inactivo 
     [HttpPut("{id}/activate")]
-    [Authorize(Roles = "Admin,Superadmin")] 
+    [Authorize(Roles = "Admin,Superadmin")]
     public IActionResult Activate(int id)
     {
         _productService.Activate(id);
