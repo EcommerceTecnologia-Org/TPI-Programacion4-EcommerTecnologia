@@ -58,13 +58,22 @@ public class ProductsController : ControllerBase
         return Ok(newProduct);
     }
 
-    // Elimina un producto según su id (HTTP 204 No Content). Si no existe, el middleware responde 404
-    [HttpDelete("{id}")]
+    // Endpoint PUT para eliminación lógica de producto según su id (HTTP 204 No Content). Si no existe, el middleware responde 404
+    [HttpPut("{id}/desactivate")]
     [Authorize(Roles = "Admin,Superadmin")]
-    public IActionResult Delete(int id)
+    public IActionResult Desactivate(int id)
     {
-        _productService.Delete(id);
-        return NoContent();
+        _productService.Desactivate(id);
+        return NoContent(); // HTTP 204 No Content indicando éxito
+    }
+
+    // Endpoint PUT para activar un producto inactivo 
+    [HttpPut("{id}/activate")]
+    [Authorize(Roles = "Admin,Superadmin")] 
+    public IActionResult Activate(int id)
+    {
+        _productService.Activate(id);
+        return NoContent(); // HTTP 204 No Content indicando éxito
     }
 
     // Actualiza un producto existente por su ID
