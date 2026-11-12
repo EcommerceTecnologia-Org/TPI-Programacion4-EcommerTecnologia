@@ -17,19 +17,21 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
+    // Endpoint POST para iniciar sesión (público)
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public IActionResult Login([FromBody] LoginRequest request)
     {
-        var result = await _authService.Login(request);
+        var result = _authService.Login(request);
         return Ok(result);
     }
 
+    // Endpoint POST para registrar un nuevo cliente (público)
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public IActionResult Register([FromBody] RegisterRequest request)
     {
-        var result = await _authService.Register(request);
+        var result = _authService.Register(request);
         return Ok(result);
     }
 }
