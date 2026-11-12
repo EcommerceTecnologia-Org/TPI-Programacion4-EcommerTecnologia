@@ -23,29 +23,31 @@ public class ProductsController : ControllerBase
     // Obtiene todos los productos (HTTP 200)
     [HttpGet]
     [AllowAnonymous]
-    public ActionResult<List<ProductDto>> Get()
+     public async Task<ActionResult<List<ProductDto>>> Get()
     {
-        var result = _productService.GetAll();
+        var result = await _productService.GetAll();
         return Ok(result);
     }
+
 
     // Este GET por ID también es público
     // Busca un producto por su id. Si no existe, el middleware responde 404
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public ActionResult<ProductDto> GetById(int id)
+    public async Task<ActionResult<ProductDto>> GetById(int id)
     {
-        var result = _productService.GetById(id);
+        var result = await _productService.GetById(id);
         return Ok(result);
     }
+
 
     // Este GET por ID de categoría también es público
     // Busca productos por su ID de categoría. Si no existe, el middleware responde 404
     [HttpGet("category/{categoryId}")]
     [AllowAnonymous]
-    public ActionResult<List<ProductDto>> GetByCategoryId(int categoryId)
+    public async Task<ActionResult<List<ProductDto>>> GetByCategoryId(int categoryId)
     {
-        var products = _productService.GetByCategoryId(categoryId);
+        var products = await _productService.GetByCategoryId(categoryId);
         return Ok(products);
     }
 
