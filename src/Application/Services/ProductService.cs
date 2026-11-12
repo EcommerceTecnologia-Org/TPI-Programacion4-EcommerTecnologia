@@ -93,17 +93,51 @@ public class ProductService
         return ProductDto.Create(newProduct);
     }
 
-    // Elimina un producto por ID
-    public void Delete(int id)
+    // Realiza una eliminación lógica cambiando Active a false en lugar de borrar el registro físicamente
+    public void Desactivate(int id)
     {
         var product = _productRepository.GetById(id);
 
         if (product == null)
         {
-            throw new KeyNotFoundException($"No se encontró el producto con ID {id} para eliminar.");
+            throw new KeyNotFoundException($"No se encontró el producto con ID {id} para desactivarlo.");
         }
 
-        _productRepository.Delete(product);
+        // Validación: si ya estaba inactivo, avisamos
+        if (!product.Active)
+        {
+            throw new ArgumentException("El producto ya se encuentra inactivo.");
+        }
+
+        // Ejecutamos el cambio de estado en el dominio
+        product.Desactivate();
+
+        // Actualizamos y guardamos los cambios en la base de datos
+        _productRepository.Update(product);
+        _productRepository.SaveChanges();
+    }
+
+    // Activa un producto que se encontraba inactivo
+    public void Activate(int id)
+    {
+        var product = _productRepository.GetById(id);
+
+        if (product == null)
+        {
+            throw new KeyNotFoundException($"No se encontró el producto con ID {id}.");
+        }
+
+        if (product.Active)
+        {
+            throw new ArgumentException("El producto ya se encuentra activo.");
+        }
+
+        // Ejecutamos el método de negocio de la entidad
+        product.Activate();
+
+        // Guardamos los cambios
+        _productRepository.Update(product);
+        _productRepository.SaveChanges();
     }
 
     // Modifica un producto utilizando el método de negocio de la entidad

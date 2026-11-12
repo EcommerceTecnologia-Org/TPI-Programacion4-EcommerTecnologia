@@ -57,7 +57,19 @@ public class Product
             throw new ArgumentException("El stock del producto no puede ser negativo.");
     }
 
-    // Método de negocio para descontar stock de forma segura
+    // Método de negocio para desactivar el producto (eliminación lógica)
+    public void Desactivate()
+    {
+        Active = false;
+    }
+
+    // Método de negocio para activar el producto nuevamente 
+    public void Activate()
+    {
+        Active = true;
+    }
+
+    // Método de negocio para descontar stock de forma segura utilizado en el services de Order
     public void SubtractStock(int quantity)
     {
         if (quantity <= 0)
