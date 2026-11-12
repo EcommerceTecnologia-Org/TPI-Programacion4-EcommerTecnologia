@@ -9,11 +9,12 @@ public class UserRepository : Repository<User>, IUserRepository
 {
     public UserRepository(ApplicationContext context) : base(context)
     {
-        
+
     }
-    public async Task<User?> GetByEmailAsync(string email)
+    // Busca un usuario por su email de forma síncrona
+    public User? GetByEmail(string email)
     {
-        return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+        return _dbSet.FirstOrDefault(u => u.Email == email);
     }
 
     // Reemplaza una instancia de usuario por otra (mismo Id) para actualizar
@@ -22,7 +23,7 @@ public class UserRepository : Repository<User>, IUserRepository
     {
         _dbSet.Remove(oldUser);
         _dbSet.Add(newUser);
-        _context.SaveChanges(); 
+        _context.SaveChanges();
         return newUser;
     }
 }
