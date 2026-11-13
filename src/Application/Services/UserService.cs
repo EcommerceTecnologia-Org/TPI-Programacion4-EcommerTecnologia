@@ -14,35 +14,38 @@ public class UserService
     {
         _userRepository = userRepository;
     }
-    // Modifica el rol de un usuario existente (ej. de Client a Admin o Superadmin)
+    // Modifica el rol de un usuario existente (permite ascender o degradar entre Client, Admin y Superadmin)
     public void ChangeRole(int userId, ChangeUserRoleRequest request, int currentUserId)
     {
         var newRole = request.NewRole?.Trim();
+
         // Validamos que el rol no esté vacío ni nulo
         if (string.IsNullOrWhiteSpace(newRole))
             throw new ArgumentException("El rol es requerido.");
-        // Validamos que el rol destino esté dentro de los permitidos por el negocio
-        if (newRole != "Admin" && newRole != "Superadmin")
-            throw new ArgumentException("Rol invalido. Solo se permite Admin o Superadmin.");
-        // Evitamos que un administrador se auto-modifique el rol
+
+        // Validamos que el rol destino esté dentro de los permitidos por el sistema
+        if (newRole != "Client" && newRole != "Admin" && newRole != "Superadmin")
+            throw new ArgumentException("Rol invalido. Solo se permite Client, Admin o Superadmin.");
+
+        // Seguridad: Evitamos que un administrador se auto-modifique el rol
         if (userId == currentUserId)
             throw new ArgumentException("No puedes cambiarte el rol a ti mismo.");
 
-        var user = _userRepository.GetById(userId); // Buscamos al usuario
+        // Buscamos al usuario
+        var user = _userRepository.GetById(userId);
         if (user == null)
             throw new KeyNotFoundException("Usuario no encontrado.");
-        // Validamos que el usuario al que se le cambia el rol sea estrictamente un cliente
-        if (user is not Client)
-            throw new ArgumentException("Solo se puede cambiar el rol de usuarios con rol Client.");
-        // Creamos la nueva instancia del usuario según el rol seleccionado utilizando polimorfismo
+
+        // Creamos la nueva instancia del usuario según el rol seleccionado utilizando polimorfismo 
         User newUser = newRole switch
         {
+            "Client" => new Client(user.Id, user.Email, user.Password, user.Active),
             "Admin" => new Admin(user.Id, user.Email, user.Password, user.Active),
             "Superadmin" => new Superadmin(user.Id, user.Email, user.Password, user.Active),
             _ => throw new ArgumentException("Rol invalido.")
         };
 
-        // Reemplazamos la entidad vieja por la nueva en el repositorio
+        // Reemplazamos la entidad vieja por la nueva en el repositorio para actualizar el Discriminator de TPH
         _userRepository.Replace(user, newUser);
     }
     // Activa un usuario existente que se encontraba inactivo
