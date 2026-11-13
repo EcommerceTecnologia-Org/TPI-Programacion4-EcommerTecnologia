@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Application.Models;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -70,6 +67,12 @@ namespace Application.Services
                 if (product == null)
                 {
                     throw new KeyNotFoundException($"El producto con ID {itemRequest.ProductId} no fue encontrado.");
+                }
+
+                // Si el producto está inactivo (baja lógica), no se puede comprar
+                if (!product.Active)
+                {
+                    throw new InvalidOperationException($"El producto con ID {itemRequest.ProductId} no se encuentra activo para la venta.");
                 }
 
                 // Descontamos stock de forma segura mediante la entidad
