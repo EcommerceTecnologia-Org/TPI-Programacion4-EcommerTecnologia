@@ -7,24 +7,49 @@ namespace Application.Services;
 public class ProductService
 {
     private readonly IProductRepository _productRepository;
-    private readonly ICategoryRepository _categoryRepository; // Repositorio para consultar categorías en la base de datos
+    private readonly ICategoryRepository _categoryRepository;
+    private readonly DolarService _dolarService;
 
-    // Inyección de dependencias de ambos repositorios
-    public ProductService(IProductRepository productRepository, ICategoryRepository categoryRepository)
+    public ProductService(IProductRepository productRepository, ICategoryRepository categoryRepository, DolarService dolarService)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
+        _dolarService = dolarService;
     }
 
-    // Obtiene la lista completa de productos traducida a DTOs
-    public List<ProductDto> GetAll()
+    // Obtiene la cotizacion de la API externa una sola vez por operacion
+    private async Task<double?> ObtenerCotizacion()
+    {
+        return await _dolarService.GetVentaOficial();
+    }
+
+    // Obtiene la lista completa de productos (filtrando si es cliente/anónimo)
+    public async Task<List<ProductDto>> GetAll(string role)
     {
         var products = _productRepository.List();
-        return ProductDto.Create(products);
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException("No se encontraron productos registrados.");
+        }
+
+        // Si NO es Admin ni Superadmin, mostramos únicamente los activos
+        if (role != "Admin" && role != "Superadmin")
+        {
+            products = products.Where(p => p.Active).ToList();
+        }
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException("No se encontraron productos activos registrados.");
+        }
+
+        var dolarVenta = await ObtenerCotizacion();
+        return ProductDto.Create(products, dolarVenta);
     }
 
-    // Busca un producto por ID. Si no existe, lanza KeyNotFoundException (el Middleware lo convierte en HTTP 404)
-    public ProductDto GetById(int id)
+    // Busca un producto por ID
+    public async Task<ProductDto> GetById(int id, string role)
     {
         var product = _productRepository.GetById(id);
 
@@ -33,58 +58,145 @@ public class ProductService
             throw new KeyNotFoundException($"No se encontró el producto con ID {id}.");
         }
 
-        return ProductDto.Create(product);
+        // Si el producto está inactivo y el usuario no es Admin ni Superadmin, simulamos que no existe (404)
+        if (!product.Active && role != "Admin" && role != "Superadmin")
+        {
+            throw new KeyNotFoundException($"No se encontró el producto con ID {id}.");
+        }
+
+        var dolarVenta = await ObtenerCotizacion();
+        return ProductDto.Create(product, dolarVenta);
     }
 
-    // Crea un producto aplicando las validaciones de negocio necesarias
+    // Busca productos por ID de categoría
+    public async Task<List<ProductDto>> GetByCategoryId(int categoryId, string role)
+    {
+        var category = _categoryRepository.GetById(categoryId);
+        if (category == null)
+        {
+            throw new KeyNotFoundException($"No se encontró la categoría con ID {categoryId}.");
+        }
+
+        var products = _productRepository.GetByCategoryId(categoryId);
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException($"No se encontraron productos registrados para la categoría con ID {categoryId}.");
+        }
+
+        // Si no es Admin ni Superadmin, filtramos solo los activos de esa categoría
+        if (role != "Admin" && role != "Superadmin")
+        {
+            products = products.Where(p => p.Active).ToList();
+        }
+
+        if (products == null || !products.Any())
+        {
+            throw new KeyNotFoundException($"No se encontraron productos activos registrados para la categoría con ID {categoryId}.");
+        }
+
+        var dolarVenta = await ObtenerCotizacion();
+        return ProductDto.Create(products, dolarVenta);
+    }
+    
+
+    // Crea un producto utilizando el constructor de dominio
     public ProductDto Create(PostProductRequest request)
     {
-        // Validation: El nombre no puede estar vacío
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ArgumentException("El nombre del producto no puede estar vacío.");
-        }
-
-        // Validation: El precio debe ser un valor positivo
-        if (request.Price <= 0)
-        {
-            throw new ArgumentException("El precio del producto debe ser mayor a cero.");
-        }
-
-        // Validation: Se verifica que la categoría exista en la base de datos antes de guardar
         var category = _categoryRepository.GetById(request.CategoryId);
         if (category == null)
         {
             throw new ArgumentException($"La categoria con ID {request.CategoryId} no existe.");
         }
 
-        // Mapeo del objeto DTO/Request a la entidad de dominio
-        var newProduct = new Product
-        {
-            Name = request.Name,
-            Description = request.Description,
-            Price = (double)request.Price,
-            Stock = request.Stock,
-            CategoryId = request.CategoryId,
-            Image = request.Image,
-            Active = true
-        };
+        var newProduct = new Product(
+            request.Name,
+            request.Description,
+            (double)request.Price,
+            request.Stock,
+            request.Image,
+            request.CategoryId
+        );
 
         _productRepository.Add(newProduct);
 
         return ProductDto.Create(newProduct);
     }
 
-    // Elimina un producto por ID. Si no existe, lanza KeyNotFoundException (el Middleware responde HTTP 404)
-    public void Delete(int id)
+    // Realiza una eliminación lógica cambiando Active a false en lugar de borrar el registro físicamente
+    public void Desactivate(int id)
     {
         var product = _productRepository.GetById(id);
 
         if (product == null)
         {
-            throw new KeyNotFoundException($"No se encontró el producto con ID {id} para eliminar.");
+            throw new KeyNotFoundException($"No se encontró el producto con ID {id} para desactivarlo.");
         }
 
-        _productRepository.Delete(product);
+        // Validación: si ya estaba inactivo, avisamos
+        if (!product.Active)
+        {
+            throw new ArgumentException("El producto ya se encuentra inactivo.");
+        }
+
+        // Ejecutamos el cambio de estado en el dominio
+        product.Desactivate();
+
+        // Actualizamos y guardamos los cambios en la base de datos
+        _productRepository.Update(product);
+        _productRepository.SaveChanges();
+    }
+
+    // Activa un producto que se encontraba inactivo
+    public void Activate(int id)
+    {
+        var product = _productRepository.GetById(id);
+
+        if (product == null)
+        {
+            throw new KeyNotFoundException($"No se encontró el producto con ID {id}.");
+        }
+
+        if (product.Active)
+        {
+            throw new ArgumentException("El producto ya se encuentra activo.");
+        }
+
+        // Ejecutamos el método de negocio de la entidad
+        product.Activate();
+
+        // Guardamos los cambios
+        _productRepository.Update(product);
+        _productRepository.SaveChanges();
+    }
+
+    // Modifica un producto utilizando el método de negocio de la entidad
+    public ProductDto Update(int id, PostProductRequest request)
+    {
+        var product = _productRepository.GetById(id);
+        if (product == null)
+        {
+            throw new KeyNotFoundException("El producto no fue encontrado.");
+        }
+
+        var category = _categoryRepository.GetById(request.CategoryId);
+        if (category == null)
+        {
+            throw new ArgumentException($"La categoria con ID {request.CategoryId} no existe.");
+        }
+
+        product.Update(
+            request.Name,
+            request.Description,
+            (double)request.Price,
+            request.Stock,
+            request.Image,
+            request.CategoryId
+        );
+
+        _productRepository.Update(product);
+        _productRepository.SaveChanges();
+
+        return ProductDto.Create(product);
     }
 }

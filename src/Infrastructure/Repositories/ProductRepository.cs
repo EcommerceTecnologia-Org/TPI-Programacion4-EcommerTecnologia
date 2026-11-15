@@ -13,4 +13,9 @@ public class ProductRepository : Repository<Product>, IProductRepository // impl
     }
     
     // Implementacion de metodos especificos
+    public List<Product> GetByCategoryId(int categoryId)
+    {
+        // Filtramos usando el _dbSet heredado de la clase base
+        return _dbSet.Where(p => p.CategoryId == categoryId).ToList();
+    }
 }

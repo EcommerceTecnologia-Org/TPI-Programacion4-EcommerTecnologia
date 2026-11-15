@@ -44,7 +44,6 @@ public class Repository<T> : IRepository<T> where T : class // 'where T : class'
     public void Update(T entity)
     {
         _dbSet.Update(entity);
-        SaveChanges();
     }
 
     // Elimina un registro de la tabla y guarda los cambios

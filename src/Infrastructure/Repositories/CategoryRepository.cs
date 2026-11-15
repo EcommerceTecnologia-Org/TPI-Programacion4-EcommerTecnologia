@@ -12,4 +12,9 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     {
     }
     
+    public Category? GetByName(string name)
+    {
+        return _dbSet
+            .FirstOrDefault(c => c.Name.ToLower() == name.ToLower());
+    }
 }
