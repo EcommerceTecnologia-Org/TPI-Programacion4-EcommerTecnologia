@@ -101,7 +101,7 @@ public class ProductService
     
 
     // Crea un producto utilizando el constructor de dominio
-    public ProductDto Create(PostProductRequest request)
+    public async Task<ProductDto> Create(PostProductRequest request)
     {
         var category = _categoryRepository.GetById(request.CategoryId);
         if (category == null)
@@ -119,8 +119,11 @@ public class ProductService
         );
 
         _productRepository.Add(newProduct);
+        var dolarVenta = await ObtenerCotizacion();
 
-        return ProductDto.Create(newProduct);
+
+        return ProductDto.Create(newProduct, dolarVenta);
+
     }
 
     // Realiza una eliminación lógica cambiando Active a false en lugar de borrar el registro físicamente
@@ -171,7 +174,7 @@ public class ProductService
     }
 
     // Modifica un producto utilizando el método de negocio de la entidad
-    public ProductDto Update(int id, PostProductRequest request)
+     public async Task<ProductDto> Update(int id, PostProductRequest request)
     {
         var product = _productRepository.GetById(id);
         if (product == null)
@@ -197,6 +200,8 @@ public class ProductService
         _productRepository.Update(product);
         _productRepository.SaveChanges();
 
-        return ProductDto.Create(product);
+        var dolarVenta = await ObtenerCotizacion();
+
+        return ProductDto.Create(product, dolarVenta);
     }
 }

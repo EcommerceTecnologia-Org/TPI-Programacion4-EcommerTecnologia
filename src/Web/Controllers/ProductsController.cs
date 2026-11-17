@@ -60,9 +60,9 @@ public class ProductsController : ControllerBase
     // Registra un nuevo producto (HTTP 201 Created)
     [HttpPost]
     [Authorize(Roles = "Admin,Superadmin")]
-    public ActionResult<ProductDto> Post([FromBody] PostProductRequest request)
+    public async Task<ActionResult<ProductDto>> Post([FromBody] PostProductRequest request)
     {
-        var newProduct = _productService.Create(request);
+        var newProduct = await _productService.Create(request);
         return Ok(newProduct);
     }
 
@@ -87,9 +87,9 @@ public class ProductsController : ControllerBase
     // Actualiza un producto existente por su ID
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin,Superadmin")]
-    public IActionResult Update(int id, [FromBody] PostProductRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] PostProductRequest request)
     {
-        var updatedProduct = _productService.Update(id, request);
+        var updatedProduct = await _productService.Update(id, request);
         return Ok(updatedProduct);
     }
 }
