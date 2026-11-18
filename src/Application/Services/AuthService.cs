@@ -5,7 +5,7 @@ using Domain.Entities;
 using Domain.Interfaces;
 
 namespace Application.Services;
-
+// Maneja la autenticación: login con validación de credenciales y registro de nuevos clientes
 public class AuthService
 {
     private readonly IUserRepository _userRepository;
@@ -20,12 +20,15 @@ public class AuthService
     // Valida las credenciales del usuario y genera un token JWT si son correctas
     public AuthResponseDto Login(LoginRequest request)
     {
+        // Normalizamos el email (minúsculas y sin espacios) para que la búsqueda sea consistente
         var email = request.Email.Trim().ToLowerInvariant();
 
         // Buscamos al usuario por su email
         var user = _userRepository.GetByEmail(email);
         
         // Validamos existencia, si está activo y si la contraseña coincide
+        // Un único mensaje genérico evita revelar si falló el email, 
+        // la contraseña o si el usuario está inactivo
         if (user == null || !user.Active || user.Password != request.Password)
         {
             // Capturado por el Global Exception Handling
@@ -66,7 +69,7 @@ public class AuthService
 
         // Agregamos el cliente al repositorio y persistimos los cambios
         _userRepository.Add(client);
-
+        // Autenticamos automáticamente al usuario recién registrado devolviéndole su token
         return _jwtTokenGenerator.GenerateToken(client);
     }
 }
